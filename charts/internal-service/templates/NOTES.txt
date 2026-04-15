@@ -1,0 +1,13 @@
+The {{ include "internal-service.fullname" . }} service has been deployed.
+
+Access it via port-forward:
+
+  kubectl --namespace {{ .Release.Namespace }} port-forward \
+    svc/{{ include "internal-service.fullname" . }} 8080:8080
+
+Then open:
+  http://127.0.0.1:8080/        → environment variables as JSON
+  http://127.0.0.1:8080/healthz → health check
+
+Environment:
+  PROD={{ .Values.prod }}

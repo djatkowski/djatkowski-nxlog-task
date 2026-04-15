@@ -1,0 +1,130 @@
+---
+# Source: internal-service/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: internal-service
+  labels:
+    helm.sh/chart: internal-service-0.1.0
+    app.kubernetes.io/name: internal-service
+    app.kubernetes.io/instance: internal-service
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: internal-service
+    app.kubernetes.io/instance: internal-service
+---
+# Source: internal-service/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: internal-service
+  labels:
+    helm.sh/chart: internal-service-0.1.0
+    app.kubernetes.io/name: internal-service
+    app.kubernetes.io/instance: internal-service
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: internal-service
+      app.kubernetes.io/instance: internal-service
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: internal-service-0.1.0
+        app.kubernetes.io/name: internal-service
+        app.kubernetes.io/instance: internal-service
+        app.kubernetes.io/version: "1.16.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: internal-service
+                    app.kubernetes.io/instance: internal-service
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: internal-service
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+            capabilities:
+              drop:
+                - ALL
+          image: "ghcr.io/djatkowski/nxlog-demo:sha-64ae9c8"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: PROD
+              value: "false"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+---
+# Source: internal-service/templates/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: internal-service
+  labels:
+    helm.sh/chart: internal-service-0.1.0
+    app.kubernetes.io/name: internal-service
+    app.kubernetes.io/instance: internal-service
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: internal-service
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80

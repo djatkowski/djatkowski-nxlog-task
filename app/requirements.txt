@@ -1,0 +1,2 @@
+# The app uses Python stdlib only — no third-party dependencies.
+# This file exists so pip-audit can verify that no vulnerable packages are introduced.

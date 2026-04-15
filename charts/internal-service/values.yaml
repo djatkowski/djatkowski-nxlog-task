@@ -1,0 +1,32 @@
+# Registry hostname (e.g. "docker.io/myorg", "ghcr.io/myorg").
+# Leave empty to use Docker Hub implicitly.
+hub: ghcr.io
+
+# Image name
+image: djatkowski/nxlog-demo
+
+# Image tag
+tag: latest
+
+# Set to true to enable production mode (sets PROD=true inside the container)
+prod: false
+
+# Additional environment variables
+# env:
+#   LOG_LEVEL: debug
+#   FEATURE_X: enabled
+env: {}
+
+# CPU and memory limits
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 128Mi
+
+# Horizontal autoscaling — min/max number of pods
+autoscaling:
+  minReplicas: 3
+  maxReplicas: 10

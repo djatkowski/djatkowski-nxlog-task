@@ -1,0 +1,7 @@
+ignore:
+  # Vulnerabilities where upstream maintainers decided not to provide a fix.
+  - fix-state: wont-fix
+
+  # CVE-2026-6100: affects all current Python stable releases, no fix available yet.
+  # Tracked and accepted until a patched Python version is released.
+  - vulnerability: CVE-2026-6100

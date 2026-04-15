@@ -1,0 +1,15 @@
+# Strategic merge patch: sets PROD=false for the dev environment.
+# The Deployment name must match the name produced by the Helm render
+# (helm template internal-service ... → name: internal-service).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: internal-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: internal-service
+          env:
+            - name: PROD
+              value: "false"
