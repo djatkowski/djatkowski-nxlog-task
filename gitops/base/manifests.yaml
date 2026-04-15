@@ -74,7 +74,7 @@ spec:
             capabilities:
               drop:
                 - ALL
-          image: "ghcr.io/djatkowski/nxlog-demo:sha-e0f2be1"
+          image: "ghcr.io/djatkowski/nxlog-demo:sha-228ca2b"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
