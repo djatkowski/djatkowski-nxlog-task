@@ -161,6 +161,35 @@ helm upgrade --install internal-service charts/internal-service \
 
 ---
 
+## CI/CD pipeline
+
+Every pull request to `main` runs:
+
+1. **Unit tests & dependency audit** — `unittest` + `pip-audit`
+2. **Build image** — Docker build (cached)
+3. **Smoke test** + **Vulnerability scan** — run in parallel against the built image
+
+After merge to `main`:
+
+1. **Semantic version tag** — creates a git tag based on the commit message (see below)
+2. **Publish** — builds and pushes the image to `ghcr.io` tagged with `sha-<sha>`, `latest`, and the version if applicable
+3. **GitOps update** — re-renders manifests and opens a PR; auto-merges immediately
+
+GitOps PRs (`gitops/*` branches) skip CI entirely.
+
+### Commit message convention
+
+This project follows [Conventional Commits](https://www.conventionalcommits.org/). The CI uses the commit message to determine the version bump:
+
+| Prefix | Example | Bump |
+|--------|---------|------|
+| `fix:` | `fix: correct healthz response` | patch (`1.0.0` → `1.0.1`) |
+| `feat:` | `feat: add metrics endpoint` | minor (`1.0.0` → `1.1.0`) |
+| `feat!:` / `BREAKING CHANGE` | `feat!: drop text/plain support` | major (`1.0.0` → `2.0.0`) |
+| `chore:`, `docs:`, etc. | `chore: update readme` | no tag created |
+
+---
+
 ## GitOps workflow — re-rendering manifests
 
 When the chart or values change, regenerate the base manifests and commit them:
