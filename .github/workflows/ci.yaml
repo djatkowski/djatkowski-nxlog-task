@@ -142,29 +142,38 @@ jobs:
   gitops:
     name: GitOps update
     runs-on: ubuntu-latest
-    needs: publish
-    if: startsWith(github.ref, 'refs/heads/')
+    needs: [tag, publish]
+    if: always() && needs.publish.result == 'success' && startsWith(github.ref, 'refs/heads/')
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-helm@v4
+
+      - name: Resolve image tag
+        id: image-tag
+        run: |
+          VERSION="${{ needs.tag.outputs.version }}"
+          echo "value=${VERSION:-sha-${{ needs.publish.outputs.short-sha }}}" >> "$GITHUB_OUTPUT"
+
       - run: |
           ./scripts/render.sh \
             --set hub=ghcr.io \
             --set image=${{ github.repository_owner }}/nxlog-demo \
-            --set tag=sha-${{ needs.publish.outputs.short-sha }}
+            --set tag=${{ steps.image-tag.outputs.value }}
+
       - name: Open GitOps PR
         id: pr
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: gitops/update-sha-${{ needs.publish.outputs.short-sha }}
+          branch: gitops/update-${{ steps.image-tag.outputs.value }}
           base: main
-          commit-message: "chore(gitops): bump image to sha-${{ needs.publish.outputs.short-sha }}"
-          title: "chore(gitops): bump image to sha-${{ needs.publish.outputs.short-sha }}"
+          commit-message: "chore(gitops): bump image to ${{ steps.image-tag.outputs.value }}"
+          title: "chore(gitops): bump image to ${{ steps.image-tag.outputs.value }}"
           body: |
-            **Image:** `${{ env.IMAGE }}:sha-${{ needs.publish.outputs.short-sha }}`
+            **Image:** `${{ env.IMAGE }}:${{ steps.image-tag.outputs.value }}`
             **Commit:** ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
           labels: gitops,automated
+
       - name: Auto-merge GitOps PR
         if: steps.pr.outputs.pull-request-number != ''
         run: gh pr merge --auto --squash ${{ steps.pr.outputs.pull-request-number }}
